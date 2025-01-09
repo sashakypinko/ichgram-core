@@ -21,19 +21,21 @@ class PostService extends EntityService<IPost> {
   async getTrendingPosts(offset: string | number = 0, limit: string | number = 20): Promise<IPost[]> {
     return this.model.aggregate([
       {
-        $project: {
-          mediaId: 1,
-          content: 1,
-          author: 1,
-          likesCount: { $size: '$likedBy' },
-        },
-      },
-      {
         $lookup: {
           from: 'users',
           localField: 'author',
           foreignField: '_id',
           as: 'author',
+        },
+      },
+      {
+        $project: {
+          mediaId: 1,
+          content: 1,
+          author: { $arrayElemAt: ['$author', 0] },
+          createdAt: 1,
+          likedBy: 1,
+          likesCount: { $size: '$likedBy' },
         },
       },
       { $sort: { likesCount: -1 } },

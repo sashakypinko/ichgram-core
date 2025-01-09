@@ -122,7 +122,14 @@ class PostController {
         sender: new mongoose.Types.ObjectId(userId),
         receiver: post.author._id,
       }, userConnections);
-    } 
+    } else {
+      await this.notificationService.deleteByParams({
+        action: Action.LIKE,
+        entityType: EntityType.POST,
+        entityId: post._id.toString(),
+        sender: userId,
+      }, userConnections);
+    }
     
     return post;
   }

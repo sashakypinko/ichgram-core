@@ -3,6 +3,7 @@ const TYPES = {
   PostService: Symbol.for('PostService'),
   CommentService: Symbol.for('CommentService'),
   NotificationService: Symbol.for('NotificationService'),
+  NotificationEventService: Symbol.for('NotificationEventService'),
   MessageService: Symbol.for('MessageService'),
   MessageEventService: Symbol.for('MessageEventService'),
   MediaService: Symbol.for('MediaService'),

@@ -5,36 +5,45 @@ import {
   Param,
   Post,
   StatusCode,
-  Body, UserId, Inject,
+  Body,
+  UserId,
+  Inject,
+  UserConnections,
+  UserConnectionsType, AuthOnly, Query,
 } from 'light-kite';
 import NotificationService from './notification.service';
-import { INotification } from './notification.schema';
+import {INotification} from './notification.schema';
 import {CreateNotificationDto} from './dto/create-notification.dto';
 import TYPES from '../types';
+import {PaginatedRequestDto} from '../user/dto/paginated-request.dto';
 
 @Controller('/notifications')
 class NotificationController {
   constructor(@Inject(TYPES.NotificationService) private readonly notificationService: NotificationService) {}
 
-  @Get(':id')
-  async getAll(@UserId() userId: string): Promise<INotification[]> {
-    return this.notificationService.getAll();
+  @AuthOnly()
+  @Get('')
+  getAll(@UserId() userId: string, @Query() { offset, limit }: PaginatedRequestDto): Promise<INotification[]> {
+    return this.notificationService.getByUserId(userId, offset, limit);
   }
 
+  @AuthOnly()
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<INotification | null> {
+  getById(@Param('id') id: string): Promise<INotification | null> {
     return this.notificationService.getById(id);
   }
 
+  @AuthOnly()
   @StatusCode(201)
   @Post()
-  store(@Body() data: CreateNotificationDto): Promise<INotification> {
-    return this.notificationService.create(data);
+  store(@Body() data: CreateNotificationDto, @UserConnections() userConnections: UserConnectionsType): Promise<INotification> {
+    return this.notificationService.create(data, userConnections);
   }
 
+  @AuthOnly()
   @Delete(':id')
-  async delete(@Param('id') id: string): Promise<INotification | null> {
-    return this.notificationService.delete(id);
+  delete(@Param('id') id: string, @UserConnections() userConnections: UserConnectionsType): Promise<INotification | null> {
+    return this.notificationService.delete(id, userConnections);
   }
 }
 

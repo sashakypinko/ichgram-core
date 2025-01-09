@@ -17,6 +17,7 @@ import TYPES from './types';
 import PostController from './post/post.controller';
 import CommentController from './comment/comment.controller';
 import CommentService from './comment/comment.service';
+import NotificationEventService from './notification/notification-event.service';
 
 export default {
   middlewares: [
@@ -36,6 +37,7 @@ export default {
     PostService,
     CommentService,
     NotificationService,
+    NotificationEventService,
     MessageService,
     MessageEventService,
     MediaService,

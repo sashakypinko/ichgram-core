@@ -1,27 +1,35 @@
 import {
+  AuthOnly,
   Body,
   Controller,
-  Post,
-  ValidateDto,
-  StatusCode,
-  Get,
-  Param,
-  Put,
   Delete,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
   Query,
+  StatusCode,
+  UploadedFiles,
+  UserConnections,
+  UserConnectionsType,
   UserId,
-  Inject, UploadedFiles, AuthOnly,
+  ValidateDto,
 } from 'light-kite';
-import { IPost } from './post.schema';
+import {IPost} from './post.schema';
 import PostService from './post.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
+import {CreatePostDto} from './dto/create-post.dto';
+import {UpdatePostDto} from './dto/update-post.dto';
 import MediaService from '../core/services/media.service';
 import UserService from '../user/user.service';
 import TYPES from '../types';
-import { PaginatedRequestDto } from '../user/dto/paginated-request.dto';
+import {PaginatedRequestDto} from '../user/dto/paginated-request.dto';
 import CommentService from '../comment/comment.service';
-import { IComment } from '../comment/comment.schema';
+import {IComment} from '../comment/comment.schema';
+import NotificationService from '../notification/notification.service';
+import Action from '../notification/enums/action.enum';
+import EntityType from '../notification/enums/entity-type.enum';
+import mongoose, {Schema} from 'mongoose';
 
 @Controller('/posts')
 class PostController {
@@ -30,6 +38,7 @@ class PostController {
     @Inject(TYPES.MediaService) private readonly mediaService: MediaService,
     @Inject(TYPES.UserService) private readonly userService: UserService,
     @Inject(TYPES.CommentService) private readonly commentService: CommentService,
+    @Inject(TYPES.NotificationService) private readonly notificationService: NotificationService,
   ) {}
   
   @AuthOnly()
@@ -97,8 +106,25 @@ class PostController {
   
   @AuthOnly()
   @Post(':id/toggle-like')
-  toggleLike(@Param('id') postId: string, @UserId() userId: string): Promise<IPost> {
-    return this.postService.toggleLike(userId, postId);
+  async toggleLike(
+    @UserConnections() userConnections: UserConnectionsType,
+    @Param('id') postId: string,
+    @UserId() userId: string,
+  ): Promise<IPost> {
+    const post = await this.postService.toggleLike(userId, postId);
+    
+    if (post.likedBy.find((id) => id.equals(userId))) {
+      await this.notificationService.create({ 
+        action: Action.LIKE,
+        entityType: EntityType.POST,
+        entityId: post._id,
+        mediaId: post.mediaId,
+        sender: new mongoose.Types.ObjectId(userId),
+        receiver: post.author._id,
+      }, userConnections);
+    } 
+    
+    return post;
   }
 }
 

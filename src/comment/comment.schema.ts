@@ -1,11 +1,13 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import {IPost} from '../post/post.schema';
+import {IUser} from '../user/user.schema';
 
 export interface IComment extends Document {
   _id: Types.ObjectId;
   text: string;
   likedBy: Types.ObjectId[];
-  post: Types.ObjectId;
-  author: Types.ObjectId;
+  post: Types.ObjectId | IPost;
+  author: Types.ObjectId | IUser;
   createdAt: Date;
   updatedAt: Date;
 }

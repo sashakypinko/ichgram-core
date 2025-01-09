@@ -10,33 +10,57 @@ import {
   Delete,
   UserId,
   Inject,
-  UploadedFiles, 
-  AuthOnly,
+  UploadedFiles,
+  AuthOnly, UserConnections, UserConnectionsType,
 } from 'light-kite';
-import { IComment } from './comment.schema';
+import {IComment} from './comment.schema';
 import CommentService from './comment.service';
-import { CreateCommentDto } from './dto/create-comment.dto';
-import { UpdateCommentDto } from './dto/update-comment.dto';
+import {CreateCommentDto} from './dto/create-comment.dto';
+import {UpdateCommentDto} from './dto/update-comment.dto';
 import TYPES from '../types';
+import Action from '../notification/enums/action.enum';
+import EntityType from '../notification/enums/entity-type.enum';
+import mongoose from 'mongoose';
+import NotificationService from '../notification/notification.service';
+import {IPost} from '../post/post.schema';
 
 @Controller('/comments')
 class CommentController {
-  constructor(@Inject(TYPES.CommentService) private readonly commentService: CommentService) {}
+  constructor(
+    @Inject(TYPES.CommentService) private readonly commentService: CommentService,
+    @Inject(TYPES.NotificationService) private readonly notificationService: NotificationService,
+  ) {
+  }
 
   @AuthOnly()
   @Get(':id')
   getById(@Param('id') id: string): Promise<IComment | null> {
     return this.commentService.findById(id);
   }
-  
+
   @AuthOnly()
   @ValidateDto(CreateCommentDto)
   @StatusCode(201)
   @Post()
-  create(@UserId() userId: string, @Body() data: CreateCommentDto): Promise<IComment> {
-    return this.commentService.create(userId, data);
+  async create(
+    @UserConnections() userConnections: UserConnectionsType,
+    @UserId() userId: string,
+    @Body() data: CreateCommentDto,
+  ): Promise<IComment> {
+    const comment = await this.commentService.create(userId, data);
+
+    await this.notificationService.create({
+      action: Action.COMMENT,
+      entityType: EntityType.POST,
+      entityId: comment.post._id,
+      mediaId: (comment.post as IPost).mediaId,
+      sender: new mongoose.Types.ObjectId(userId),
+      receiver: (comment.post as IPost).author._id,
+    }, userConnections);
+
+    return comment;
   }
-  
+
   @AuthOnly()
   @ValidateDto(UpdateCommentDto)
   @StatusCode(201)
@@ -44,17 +68,54 @@ class CommentController {
   update(@Param('id') postId: string, @UserId() userId: string, @Body() data: UpdateCommentDto): Promise<IComment> {
     return this.commentService.update(userId, postId, data);
   }
-  
+
   @AuthOnly()
   @Delete(':id')
-  async delete(@Param('id') postId: string, @UserId() userId: string): Promise<IComment> {
-    return this.commentService.delete(userId, postId);
+  async delete(
+    @UserConnections() userConnections: UserConnectionsType,
+    @Param('id') postId: string,
+    @UserId() userId: string,
+  ): Promise<IComment> {
+    const comment = await this.commentService.delete(userId, postId);
+
+    await this.notificationService.deleteByParams({
+      action: Action.COMMENT,
+      entityType: EntityType.POST,
+      entityId: (comment.post as IPost)._id,
+      sender: userId,
+    }, userConnections);
+
+    return comment;
   }
-  
+
   @AuthOnly()
   @Post(':id/toggle-like')
-  toggleLike(@Param('id') postId: string, @UserId() userId: string): Promise<IComment> {
-    return this.commentService.toggleLike(userId, postId);
+  async toggleLike(
+    @UserConnections() userConnections: UserConnectionsType,
+    @Param('id') postId: string, 
+    @UserId() userId: string,
+  ): Promise<IComment> {
+    const comment = await this.commentService.toggleLike(userId, postId)
+    
+    if (comment.likedBy.find((id) => id.equals(userId))) {
+      await this.notificationService.create({
+        action: Action.LIKE,
+        entityType: EntityType.COMMENT,
+        entityId: comment._id,
+        mediaId: (comment.post as IPost).mediaId,
+        sender: new mongoose.Types.ObjectId(userId),
+        receiver: comment.author._id,
+      }, userConnections);
+    } else {
+      await this.notificationService.deleteByParams({
+        action: Action.LIKE,
+        entityType: EntityType.COMMENT,
+        entityId: comment._id,
+        sender: userId,
+      }, userConnections);
+    }
+    
+    return comment;
   }
 }
 

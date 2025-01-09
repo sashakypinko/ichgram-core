@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, {Types} from 'mongoose';
 import { ForbiddenException, Injectable } from 'light-kite';
 import { IComment, Comment } from './comment.schema';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -19,13 +19,13 @@ class CommentService extends EntityService<IComment> {
     const post = new this.model({ ...data, author: userId });
 
     await post.save();
-    return post.populate('author post');
+    return post.populate(['author', 'post']);
   }
 
   async update(userId: string, commentId: string, data: UpdateCommentDto): Promise<IComment> {
     const comment = await this.getById(commentId);
 
-    if (!comment.author.equals(userId)) {
+    if (!(comment.author as mongoose.Types.ObjectId).equals(userId)) {
       throw new ForbiddenException('User is not authorized to update this comment');
     }
 
@@ -38,7 +38,7 @@ class CommentService extends EntityService<IComment> {
   async delete(userId: string, commentId: string): Promise<IComment> {
     const comment = await this.getById(commentId);
 
-    if (!comment.author.equals(userId)) {
+    if (!(comment.author as mongoose.Types.ObjectId).equals(userId)) {
       throw new ForbiddenException('User is not authorized to delete this comment');
     }
 

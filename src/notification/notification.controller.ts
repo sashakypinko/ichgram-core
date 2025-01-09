@@ -45,6 +45,12 @@ class NotificationController {
   delete(@Param('id') id: string, @UserConnections() userConnections: UserConnectionsType): Promise<INotification | null> {
     return this.notificationService.delete(id, userConnections);
   }
+
+  @AuthOnly()
+  @Post('mark-all-viewed')
+  async markAllViewed(@UserId() userId: string): Promise<INotification[]> {
+    return this.notificationService.markAllAsViewed(userId);
+  }
 }
 
 export default NotificationController;

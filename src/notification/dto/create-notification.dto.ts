@@ -5,7 +5,7 @@ export class CreateNotificationDto {
   action: Action;
   entityType: string;
   entityId: mongoose.Types.ObjectId;
-  mediaId: string;
   sender: mongoose.Types.ObjectId;
   receiver: mongoose.Types.ObjectId;
+  mediaId?: string;
 }

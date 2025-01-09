@@ -37,12 +37,17 @@ class NotificationService extends EntityService<INotification> {
 
   async deleteByParams(params: FilterQuery<INotification>, userConnections: UserConnectionsType): Promise<INotification | null> {
     const notification: INotification | null = await this.model.findOne(params);
-    if (!notification) throw new BadRequestException('Notification not found');
+    if (!notification) return null;
 
     await notification.deleteOne();
     this.notificationEventService.deleted(userConnections, notification);
     
     return notification;
+  }
+
+  async markAllAsViewed(userId: string): Promise<INotification[]> {
+    await this.model.updateMany({ receiver: userId }, { viewed: true });
+    return this.getByUserId(userId);
   }
 }
 

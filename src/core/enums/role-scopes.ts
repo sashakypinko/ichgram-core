@@ -20,6 +20,7 @@ const roleScopes: Record<Role, Scope[]> = {
   ],
   [Role.User]: [
     Scope.UserRead,
+    Scope.UserManage,
     Scope.ContentRead,
     Scope.ContentWrite,
     Scope.CommentRead,

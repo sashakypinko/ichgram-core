@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  core:
+    build:
+      context: .
+    expose:
+      - "3003"
+    networks:
+      - ichgram-network
+
+networks:
+  ichgram-network:
+    driver: bridge
+    external: true

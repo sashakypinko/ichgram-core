@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 3003
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "build"]
+CMD ["npm", "run", "prod"]

@@ -8,6 +8,7 @@ export interface IPost extends Document {
   author: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+  commentsCount?: number;
 }
 
 const PostSchema = new Schema<IPost>({
@@ -17,10 +18,17 @@ const PostSchema = new Schema<IPost>({
   author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+}, { toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+PostSchema.virtual('commentsCount', {
+  ref: 'Comment',
+  localField: '_id',
+  foreignField: 'post',
+  count: true,
 });
 
 PostSchema.pre(/^find/ as unknown as 'find', function(next) {
-  this.populate('author');
+  this.populate(['author', 'commentsCount']);
   next();
 });
 

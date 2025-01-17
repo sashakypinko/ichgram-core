@@ -16,6 +16,7 @@ import {
   UserId,
   ValidateDto,
 } from 'light-kite';
+import mongoose from 'mongoose';
 import {IPost} from './post.schema';
 import PostService from './post.service';
 import {CreatePostDto} from './dto/create-post.dto';
@@ -29,7 +30,6 @@ import {IComment} from '../comment/comment.schema';
 import NotificationService from '../notification/notification.service';
 import Action from '../notification/enums/action.enum';
 import EntityType from '../notification/enums/entity-type.enum';
-import mongoose, {Schema} from 'mongoose';
 
 @Controller('/posts')
 class PostController {
@@ -113,22 +113,25 @@ class PostController {
   ): Promise<IPost> {
     const post = await this.postService.toggleLike(userId, postId);
     
-    if (post.likedBy.find((id) => id.equals(userId))) {
-      await this.notificationService.create({ 
-        action: Action.LIKE,
-        entityType: EntityType.POST,
-        entityId: post._id,
-        mediaId: post.mediaId,
-        sender: new mongoose.Types.ObjectId(userId),
-        receiver: post.author._id,
-      }, userConnections);
-    } else {
-      await this.notificationService.deleteByParams({
-        action: Action.LIKE,
-        entityType: EntityType.POST,
-        entityId: post._id.toString(),
-        sender: userId,
-      }, userConnections);
+    // TODO: move to the service and create reusable function
+    if (!post.author._id.equals(userId)) {
+      if (post.likedBy.find((id) => id.equals(userId))) {
+        await this.notificationService.create({
+          action: Action.LIKE,
+          entityType: EntityType.POST,
+          entityId: post._id,
+          mediaId: post.mediaId,
+          sender: new mongoose.Types.ObjectId(userId),
+          receiver: post.author._id,
+        }, userConnections);
+      } else {
+        await this.notificationService.deleteByParams({
+          action: Action.LIKE,
+          entityType: EntityType.POST,
+          entityId: post._id.toString(),
+          sender: userId,
+        }, userConnections);
+      }
     }
     
     return post;

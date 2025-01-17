@@ -13,7 +13,7 @@ class PostService extends EntityService<IPost> {
 
   async getByUserIds(userIds: (Types.ObjectId | string)[], offset: number = 0, limit: number = 20): Promise<IPost[]> {
     return this.model.find({ author: { $in: userIds } })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(offset)
       .limit(limit);
   }

@@ -22,7 +22,7 @@ const CommentSchema = new Schema<IComment>({
 });
 
 CommentSchema.pre(/^find/ as unknown as 'find', function(next) {
-  this.populate('author post');
+  this.populate('author');
   next();
 });
 

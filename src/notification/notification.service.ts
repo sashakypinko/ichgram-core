@@ -12,9 +12,11 @@ class NotificationService extends EntityService<INotification> {
     super(Notification);
   }
   
-  async getByUserId(userId: string, offset: number = 0, limit: number = 20): Promise<INotification[]> {
+  async getByUserId(userId: string, offset: number = 0, limit: number = 50): Promise<INotification[]> {
     return this.model.find({ receiver: userId })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(offset)
+      .limit(limit);
   }
 
   async create(data: CreateNotificationDto, userConnections: UserConnectionsType): Promise<INotification> {

@@ -11,7 +11,11 @@ import {
   Query,
   RequireScopes,
   UserId,
-  Inject, AuthOnly, UserConnections, UserConnectionsType,
+  Inject,
+  AuthOnly, 
+  UserConnections,
+  UserConnectionsType, 
+  UploadedFiles,
 } from 'light-kite';
 import {IUser} from './user.schema';
 import UserService from './user.service';
@@ -27,9 +31,9 @@ import PostService from '../post/post.service';
 import {IPost} from '../post/post.schema';
 import Action from '../notification/enums/action.enum';
 import EntityType from '../notification/enums/entity-type.enum';
-import mongoose from 'mongoose';
 import NotificationService from '../notification/notification.service';
-
+import MediaService from '../core/services/media.service';
+import {SearchUsersDto} from './dto/search-users.dto';
 
 @Controller('/users')
 class UserController {
@@ -37,39 +41,46 @@ class UserController {
     @Inject(TYPES.UserService) private readonly userService: UserService,
     @Inject(TYPES.PostService) private readonly postService: PostService,
     @Inject(TYPES.NotificationService) private readonly notificationService: NotificationService,
+    @Inject(TYPES.MediaService) private readonly mediaService: MediaService,
   ) {
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserRead])
   @Get()
   getAll(): Promise<IUser[]> {
     return this.userService.getAll();
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserRead])
   @Get('search')
-  search(@UserId() userId: string, @Query('search') search: string = ''): Promise<IUser[]> {
-    return this.userService.search(userId, search);
+  search(@UserId() userId: string, @Query() { search, offset, limit }: SearchUsersDto): Promise<IUser[]> {
+    return this.userService.search(userId, search, offset, limit);
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserRead])
   @Get('by-email')
   getByEmail(@Query('email') email: string): Promise<IUser | null> {
     return this.userService.getByEmail(email);
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserRead])
   @Get('by-unique-fields')
   getByUniqueFields(@Query() query: UniqueFields): Promise<IUser | null> {
     return this.userService.getByUniqueFields(query);
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserRead])
   @Get(':id')
   getById(@Param('id') id: string): Promise<IUser | null> {
     return this.userService.findById(id);
   }
 
+  @AuthOnly()
   @ValidateDto(GetFollowersDto)
   @RequireScopes([Scope.UserRead])
   @Get(':id/followers')
@@ -77,6 +88,7 @@ class UserController {
     return this.userService.getFollowersById(id, offset, limit);
   }
 
+  @AuthOnly()
   @ValidateDto(GetFollowingsDto)
   @RequireScopes([Scope.UserRead])
   @Get(':id/followings')
@@ -90,6 +102,7 @@ class UserController {
     return this.postService.getByUserIds([id], offset, limit);
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserManage])
   @ValidateDto(CreateUserDto)
   @StatusCode(201)
@@ -98,14 +111,27 @@ class UserController {
     return this.userService.create(data);
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserManage])
   @ValidateDto(UpdateUserDto)
   @StatusCode(201)
   @Put(':id')
-  update(@Param('id') id: string, @Body() data: UpdateUserDto): Promise<IUser> {
+  async update(
+    @UploadedFiles('avatar') avatar: Express.Multer.File,
+    @Param('id') id: string, 
+    @Body() data: UpdateUserDto,
+  ): Promise<IUser> {
+    if (avatar) {
+      const media = await this.mediaService.store(avatar);
+      data.avatar = media._id;
+    } else {
+      delete data.avatar;
+    }
+    
     return this.userService.update(id, data);
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserManage])
   @Post(':id/follow')
   async follow(
@@ -116,6 +142,7 @@ class UserController {
     const user = await this.userService.follow(id, authUserId);
     const authUser = await this.userService.getById(authUserId);
 
+    // TODO: move to the service and create reusable function
     await this.notificationService.create({
       action: Action.FOLLOW,
       entityType: EntityType.USER,
@@ -127,6 +154,7 @@ class UserController {
     return user;
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserManage])
   @Post(':id/unfollow')
   async unfollow(
@@ -136,7 +164,8 @@ class UserController {
   ): Promise<IUser> {
     const user = await this.userService.unfollow(id, authUserId);
     const authUser = await this.userService.getById(authUserId);
-    
+
+    // TODO: move to the service and create reusable function
     await this.notificationService.deleteByParams({
       action: Action.FOLLOW,
       entityType: EntityType.USER,
@@ -147,6 +176,7 @@ class UserController {
     return user;
   }
 
+  @AuthOnly()
   @RequireScopes([Scope.UserManage])
   @Delete(':id')
   delete(@Param('id') id: string): Promise<IUser | null> {

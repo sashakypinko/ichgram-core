@@ -67,7 +67,7 @@ class UserService extends EntityService<IUser> {
     return user;
   }
 
-  async search(userId: string, search: string): Promise<IUser[]> {
+  async search(userId: string, search: string, offset: number = 0, limit: number = 20): Promise<IUser[]> {
     if (!search) {
       return [];
     }
@@ -79,7 +79,8 @@ class UserService extends EntityService<IUser> {
         { fullName: { $regex: search, $options: 'i' } }
       ]
     })
-      .limit(10);
+      .skip(offset)
+      .limit(limit);
   }
 
   async follow(followedId: string, followerId: string): Promise<IUser> {

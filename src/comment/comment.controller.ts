@@ -49,6 +49,7 @@ class CommentController {
   ): Promise<IComment> {
     const comment = await this.commentService.create(userId, data);
 
+    // TODO: move to the service and create reusable function
     await this.notificationService.create({
       action: Action.COMMENT,
       entityType: EntityType.POST,
@@ -92,29 +93,32 @@ class CommentController {
   @Post(':id/toggle-like')
   async toggleLike(
     @UserConnections() userConnections: UserConnectionsType,
-    @Param('id') postId: string, 
+    @Param('id') postId: string,
     @UserId() userId: string,
   ): Promise<IComment> {
-    const comment = await this.commentService.toggleLike(userId, postId)
-    
-    if (comment.likedBy.find((id) => id.equals(userId))) {
-      await this.notificationService.create({
-        action: Action.LIKE,
-        entityType: EntityType.COMMENT,
-        entityId: comment._id,
-        mediaId: (comment.post as IPost).mediaId,
-        sender: new mongoose.Types.ObjectId(userId),
-        receiver: comment.author._id,
-      }, userConnections);
-    } else {
-      await this.notificationService.deleteByParams({
-        action: Action.LIKE,
-        entityType: EntityType.COMMENT,
-        entityId: comment._id,
-        sender: userId,
-      }, userConnections);
+    const comment = await this.commentService.toggleLike(userId, postId);
+
+    // TODO: move to the service and create reusable function
+    if (!comment.author._id.equals(userId)) {
+      if (comment.likedBy.find((id) => id.equals(userId))) {
+        await this.notificationService.create({
+          action: Action.LIKE,
+          entityType: EntityType.COMMENT,
+          entityId: comment._id,
+          mediaId: (comment.post as IPost).mediaId,
+          sender: new mongoose.Types.ObjectId(userId),
+          receiver: comment.author._id,
+        }, userConnections);
+      } else {
+        await this.notificationService.deleteByParams({
+          action: Action.LIKE,
+          entityType: EntityType.COMMENT,
+          entityId: comment._id,
+          sender: userId,
+        }, userConnections);
+      }
     }
-    
+
     return comment;
   }
 }

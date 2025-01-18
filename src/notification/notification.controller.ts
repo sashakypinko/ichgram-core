@@ -19,11 +19,12 @@ import {PaginatedRequestDto} from '../user/dto/paginated-request.dto';
 
 @Controller('/notifications')
 class NotificationController {
-  constructor(@Inject(TYPES.NotificationService) private readonly notificationService: NotificationService) {}
+  constructor(@Inject(TYPES.NotificationService) private readonly notificationService: NotificationService) {
+  }
 
   @AuthOnly()
   @Get('')
-  getAll(@UserId() userId: string, @Query() { offset, limit }: PaginatedRequestDto): Promise<INotification[]> {
+  getAll(@UserId() userId: string, @Query() {offset, limit}: PaginatedRequestDto): Promise<INotification[]> {
     return this.notificationService.getByUserId(userId, offset, limit);
   }
 
@@ -38,12 +39,6 @@ class NotificationController {
   @Post()
   store(@Body() data: CreateNotificationDto, @UserConnections() userConnections: UserConnectionsType): Promise<INotification> {
     return this.notificationService.create(data, userConnections);
-  }
-
-  @AuthOnly()
-  @Delete(':id')
-  delete(@Param('id') id: string, @UserConnections() userConnections: UserConnectionsType): Promise<INotification | null> {
-    return this.notificationService.delete(id, userConnections);
   }
 
   @AuthOnly()

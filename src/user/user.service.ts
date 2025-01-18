@@ -8,19 +8,25 @@ import {UniqueFields} from './types';
 import roleScopes from '../core/enums/role-scopes';
 import Role from '../core/enums/roles';
 import EntityService from '../core/services/entity.service';
+import {Post} from '../post/post.schema';
 
 @Injectable()
 class UserService extends EntityService<IUser> {
   constructor(@Inject(TYPES.ILogger) private readonly logger: ILogger) {
     super(User);
   }
+
+  async findById(id: string): Promise<IUser | null> {
+    const user = await this.model.findById(id);
+    return user ? this.withCounts(user) : null;
+  }
   
   async getByEmail(email: string): Promise<IUser | null> {
-    return User.findOne({ email });
+    return this.model.findOne({ email });
   }
   
   async getByUniqueFields(query: UniqueFields): Promise<IUser | null> {
-    const user = await User.findOne(
+    const user = await this.model.findOne(
       { $or: Object.entries(query).map(([key, value]) => ({ [key]: value })) }
     );
 
@@ -29,19 +35,19 @@ class UserService extends EntityService<IUser> {
 
   async getFollowersById(id: string, offset: number = 0, limit: number = 20): Promise<IUser[]> {
     const user = await this.getById(id);
-    return User.find({ followings: user._id }).skip(offset).limit(limit);
+    return this.model.find({ followings: user._id }).skip(offset).limit(limit);
   }
 
   async getFollowingsById(id: string, offset: number = 0, limit: number = 20): Promise<IUser[]> {
     const user = await this.getById(id);
-    return User.find({ _id: { $in: user.followings } }).skip(offset).limit(limit);
+    return this.model.find({ _id: { $in: user.followings } }).skip(offset).limit(limit);
   }
   
   async create(data: CreateUserDto): Promise<IUser> {
-    const existingUser: IUser | null = await User.findOne({ email: data.email });
+    const existingUser: IUser | null = await this.model.findOne({ email: data.email });
     if (existingUser) throw new BadRequestException('User with this email already exists');
 
-    const user = new User({
+    const user = new this.model({
       ...data,
       role: Role.User,
       scopes: roleScopes[Role.User],
@@ -62,7 +68,7 @@ class UserService extends EntityService<IUser> {
   async delete(id: string): Promise<IUser | null> {
     const user = this.getById(id);
 
-    await User.deleteOne({ _id: id });
+    await this.model.deleteOne({ _id: id });
     this.logger.logInfo(`User with ID: ${id} has been deleted.`);
     return user;
   }
@@ -72,7 +78,7 @@ class UserService extends EntityService<IUser> {
       return [];
     }
 
-    return User.find({
+    return this.model.find({
       _id: { $ne: userId },
       $or: [
         { username: { $regex: search, $options: 'i' } },
@@ -120,7 +126,8 @@ class UserService extends EntityService<IUser> {
   }
   
   private async withCounts(user: IUser): Promise<IUser> {
-    user.followersCount = await User.countDocuments({ followings: user._id });
+    user.followersCount = await this.model.countDocuments({ followings: user._id });
+    user.postsCount = await Post.countDocuments({ author: user._id });
     return user;
   }
 }

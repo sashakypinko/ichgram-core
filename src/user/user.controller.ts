@@ -12,10 +12,10 @@ import {
   RequireScopes,
   UserId,
   Inject,
-  AuthOnly, 
+  AuthOnly,
   UserConnections,
-  UserConnectionsType, 
-  UploadedFiles,
+  UserConnectionsType,
+  UploadedFiles, BadRequestException, ForbiddenException,
 } from 'light-kite';
 import {IUser} from './user.schema';
 import UserService from './user.service';
@@ -117,10 +117,14 @@ class UserController {
   @StatusCode(201)
   @Put(':id')
   async update(
+    @UserId() authUserId: string,
     @UploadedFiles('avatar') avatar: Express.Multer.File,
     @Param('id') id: string, 
     @Body() data: UpdateUserDto,
   ): Promise<IUser> {
+    if (authUserId !== id) {
+      throw new ForbiddenException('You can edit only your user!');
+    }
     if (avatar) {
       const media = await this.mediaService.store(avatar);
       data.avatar = media._id;
@@ -179,7 +183,10 @@ class UserController {
   @AuthOnly()
   @RequireScopes([Scope.UserManage])
   @Delete(':id')
-  delete(@Param('id') id: string): Promise<IUser | null> {
+  delete(@UserId() authUserId: string, @Param('id') id: string): Promise<IUser | null> {
+    if (authUserId !== id) {
+      throw new ForbiddenException('You can delete only your user!');
+    }
     return this.userService.delete(id);
   }
 }

@@ -1,5 +1,5 @@
 import {INotification, Notification} from './notification.schema';
-import {BadRequestException, Inject, Injectable, UserConnectionsType} from 'light-kite';
+import {BadRequestException, ForbiddenException, Inject, Injectable, UserConnectionsType} from 'light-kite';
 import {CreateNotificationDto} from './dto/create-notification.dto';
 import EntityService from '../core/services/entity.service';
 import NotificationEventService from './notification-event.service';
@@ -37,14 +37,15 @@ class NotificationService extends EntityService<INotification> {
     return notification;
   }
 
-  async deleteByParams(params: FilterQuery<INotification>, userConnections: UserConnectionsType): Promise<INotification | null> {
-    const notification: INotification | null = await this.model.findOne(params);
-    if (!notification) return null;
+  async deleteByParams(params: FilterQuery<INotification>, userConnections: UserConnectionsType): Promise<INotification[]> {
+    const notifications: INotification[] = await this.model.find(params);
 
-    await notification.deleteOne();
-    this.notificationEventService.deleted(userConnections, notification);
+    for (const notification of notifications) {
+      await notification.deleteOne();
+      this.notificationEventService.deleted(userConnections, notification);
+    }
     
-    return notification;
+    return notifications;
   }
 
   async markAllAsViewed(userId: string): Promise<INotification[]> {

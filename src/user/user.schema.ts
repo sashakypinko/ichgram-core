@@ -34,5 +34,6 @@ const UserSchema = new Schema<IUser>({
 });
 
 UserSchema.virtual('followersCount');
+UserSchema.virtual('postsCount');
 
 export const User = model('User', UserSchema);

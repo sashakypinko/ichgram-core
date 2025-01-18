@@ -94,12 +94,22 @@ class PostController {
   
   @AuthOnly()
   @Delete(':id')
-  async delete(@Param('id') postId: string, @UserId() userId: string): Promise<IPost> {
+  async delete(
+    @UserConnections() userConnections: UserConnectionsType,
+    @Param('id') postId: string, 
+    @UserId() userId: string
+  ): Promise<IPost> {
     const post = await this.postService.delete(userId, postId);
 
     if (post.mediaId) {
       await this.mediaService.remove(post.mediaId);
     }
+
+    // TODO: move to the service and create reusable function
+    await this.notificationService.deleteByParams({
+      entityType: EntityType.POST,
+      entityId: post._id.toString(),
+    }, userConnections);
     
     return post;
   }

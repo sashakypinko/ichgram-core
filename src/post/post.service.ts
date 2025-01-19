@@ -18,7 +18,7 @@ class PostService extends EntityService<IPost> {
       .limit(limit);
   }
 
-  async getTrendingPosts(offset: string | number = 0, limit: string | number = 20): Promise<IPost[]> {
+  async getTrendingPosts(userId: string, offset: string | number = 0, limit: string | number = 20): Promise<IPost[]> {
     return this.model.aggregate([
       {
         $lookup: {
@@ -36,6 +36,11 @@ class PostService extends EntityService<IPost> {
           createdAt: 1,
           likedBy: 1,
           likesCount: { $size: '$likedBy' },
+        },
+      },
+      {
+        $match: {
+          'author._id': { $ne: new mongoose.Types.ObjectId(userId) },
         },
       },
       { $sort: { likesCount: -1 } },

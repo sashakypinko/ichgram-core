@@ -52,7 +52,7 @@ class PostController {
   @ValidateDto(PaginatedRequestDto)
   @Get('trending')
   async getTrending(@UserId() userId: string, @Query() { offset, limit }: PaginatedRequestDto): Promise<IPost[]> {
-    return this.postService.getTrendingPosts(offset, limit);
+    return this.postService.getTrendingPosts(userId, offset, limit);
   }
 
   @AuthOnly()

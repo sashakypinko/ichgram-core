@@ -5,8 +5,7 @@ export class SendMessageDto {
   @IsNotEmpty({message: 'Conversation ID is required'})
   conversationId: string;
 
-  @IsOptional()
-  @Length(1, 512, {message: 'Message content must be between 1 and 512 characters'})
+  @Length(0, 512, {message: 'Message content must be between 1 and 512 characters'})
   content: string;
 
   @IsOptional()

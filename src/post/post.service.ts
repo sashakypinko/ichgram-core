@@ -29,6 +29,14 @@ class PostService extends EntityService<IPost> {
         },
       },
       {
+        $lookup: {
+          from: 'comments',
+          localField: '_id',
+          foreignField: 'post',
+          as: 'comments',
+        },
+      },
+      {
         $project: {
           mediaId: 1,
           content: 1,
@@ -36,6 +44,12 @@ class PostService extends EntityService<IPost> {
           createdAt: 1,
           likedBy: 1,
           likesCount: { $size: '$likedBy' },
+          commentsCount: { $size: '$comments' },
+        },
+      },
+      {
+        $addFields: {
+          sortScore: { $add: ['$likesCount', { $multiply: ['$commentsCount', 2] }] },
         },
       },
       {
@@ -43,7 +57,7 @@ class PostService extends EntityService<IPost> {
           'author._id': { $ne: new mongoose.Types.ObjectId(userId) },
         },
       },
-      { $sort: { likesCount: -1 } },
+      { $sort: { sortScore: -1 } },
       { $skip: typeof offset === 'string' ? parseInt(offset) : offset },
       { $limit: typeof limit === 'string' ? parseInt(limit) : limit },
     ]);

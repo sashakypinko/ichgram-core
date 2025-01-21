@@ -18,7 +18,6 @@ class MediaService extends ApiService {
       const res = await this.post('store', formData).then((res) => res.data);
       return res.data;
     } catch (e) {
-      console.log(e)
       throw new InternalServerErrorException();
     }
   }

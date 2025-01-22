@@ -49,6 +49,7 @@ class CommentService extends EntityService<IComment> {
   async toggleLike(userId: string, commentId: string): Promise<IComment> {
     const comment = await this.getById(commentId);
     const existingLikeIndex = comment.likedBy.findIndex((id) => id.equals(userId));
+    await comment.populate('post');
 
     if (existingLikeIndex === -1) {
       comment.likedBy.push(new mongoose.Types.ObjectId(userId));

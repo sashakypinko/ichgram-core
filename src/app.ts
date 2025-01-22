@@ -1,5 +1,6 @@
  import lightKiteServer from 'light-kite';
 import {connectDB} from './core/config/db';
+ import MessageEventService from './message/message-event.service';
 import modules from './modules';
 
 import 'dotenv/config';
@@ -14,7 +15,7 @@ app.useUserSocket(JWT_SECRET_KEY, {
   cors: {
     origin: '*',
   },
-});
+}, ['MessageEventService']);
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 app.run(PORT, () => {

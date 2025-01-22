@@ -104,7 +104,7 @@ class CommentController {
         await this.notificationService.create({
           action: Action.LIKE,
           entityType: EntityType.COMMENT,
-          entityId: comment._id,
+          entityId: comment.post._id,
           mediaId: (comment.post as IPost).mediaId,
           sender: new mongoose.Types.ObjectId(userId),
           receiver: comment.author._id,

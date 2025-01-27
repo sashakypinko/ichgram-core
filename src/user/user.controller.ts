@@ -15,7 +15,10 @@ import {
   AuthOnly,
   UserConnections,
   UserConnectionsType,
-  UploadedFiles, BadRequestException, ForbiddenException,
+  UploadedFiles,
+  BadRequestException,
+  ForbiddenException,
+  Headers, NotFoundException,
 } from 'light-kite';
 import {IUser} from './user.schema';
 import UserService from './user.service';
@@ -188,6 +191,39 @@ class UserController {
       throw new ForbiddenException('You can delete only your user!');
     }
     return this.userService.delete(id);
+  }
+
+  @AuthOnly()
+  @Post(':id/update-reset-password-token')
+  updateResetPasswordToken(
+    @Headers('x-system-call') systemCall: boolean, 
+    @Param('id') userId: string,
+    @Body() { token }: { token: string | null },
+  ): Promise<IUser | null> {
+    if (!systemCall) {
+      throw new ForbiddenException('This action forbidden.');
+    }
+    
+    return this.userService.update(userId, { resetPasswordToken: token });
+  }
+
+  @AuthOnly()
+  @Post('reset-password')
+  async resetPassword(
+    @Headers('x-system-call') systemCall: boolean, 
+    @Body() { token, password }: { token: string, password: string },
+  ): Promise<IUser | null> {
+    if (!systemCall) {
+      throw new ForbiddenException('This action forbidden.');
+    }
+    
+    const user = await this.userService.getByUniqueFields({ resetPasswordToken: token });
+    
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+    
+    return this.userService.update(user._id.toString(), { password });
   }
 }
 

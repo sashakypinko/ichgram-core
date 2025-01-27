@@ -5,7 +5,7 @@ services:
     build:
       context: .
     environment:
-      PORT: 3000
+      PORT: ${PORT}
       DB_URI: ${DB_URI}
       DB_NANE: ${DB_NANE}
       DB_USER: ${DB_USER}

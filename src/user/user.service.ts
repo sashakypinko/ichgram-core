@@ -57,7 +57,7 @@ class UserService extends EntityService<IUser> {
     return user;
   }
   
-  async update(id: string, data: UpdateUserDto): Promise<IUser> {
+  async update(id: string, data: UpdateUserDto | { resetPasswordToken: string | null } | { password: string }): Promise<IUser> {
     const user = await this.getById(id);
 
     Object.assign(user, data);

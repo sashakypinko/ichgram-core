@@ -8,6 +8,7 @@ export interface IUser extends Document {
   username: string;
   email: string;
   password: string;
+  resetPasswordToken: string | null;
   role: Role;
   scopes: Scope[];
   avatar: string;
@@ -23,6 +24,7 @@ const UserSchema = new Schema<IUser>({
   username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  resetPasswordToken: { type: String, default: null },
   role: { type: String, required: true, enum: Object.values(Role) },
   scopes: { type: [String], enum: Object.values(Scope), required: true },
   avatar: { type: String, default: null },

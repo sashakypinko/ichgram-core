@@ -17,7 +17,8 @@ class MediaService extends ApiService {
       
       const res = await this.post('store', formData).then((res) => res.data);
       return res.data;
-    } catch (e) {
+    } catch (error: unknown) {
+      this.handleAxiosError(error);
       throw new InternalServerErrorException();
     }
   }
@@ -26,7 +27,8 @@ class MediaService extends ApiService {
     try {
       const res = await this.delete(id).then((res) => res.data);
       return res.data;
-    } catch (e) {
+    } catch (error: unknown) {
+      this.handleAxiosError(error);
       throw new InternalServerErrorException();
     }
   }
